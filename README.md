@@ -6,4 +6,4 @@ A full product case study analysing Mixpanel's user experience, key pain points,
 
 **Topics covered:** User personas · User journey mapping · JTBD · 5 Whys · Impact/Effort prioritisation · Implementation roadmap · Success metrics
 
-By Rishabh R. | AI PM Certification — AcceleratorX
+By Rishabh R. | AI PM Certification - AcceleratorX
