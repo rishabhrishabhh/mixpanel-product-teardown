@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mixpanel Product Teardown — Rishabh R.</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --mx-purple: #5B4FBE;
+    --mx-purple-light: #EEEDfd;
+    --mx-purple-mid: #C5BFF8;
+    --mx-teal: #0f6e56;
+    --mx-teal-light: #e1f5ee;
+    --mx-orange: #D85A30;
+    --mx-orange-light: #FAECE7;
+    --mx-gray: #2C2C2A;
+    --mx-gray-mid: #888780;
+    --mx-gray-light: #F5F4F1;
+    --mx-border: #E4E3DF;
+    --white: #ffffff;
+    font-size: 16px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    color: var(--mx-gray);
+    background: var(--white);
+    line-height: 1.7;
+  }
+
+  /* HERO */
+  .hero {
+    background: var(--mx-gray);
+    color: var(--white);
+    padding: 80px 40px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 320px; height: 320px;
+    background: var(--mx-purple);
+    opacity: 0.25;
+    border-radius: 50%;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: 10%;
+    width: 220px; height: 220px;
+    background: var(--mx-teal);
+    opacity: 0.2;
+    border-radius: 50%;
+  }
+  .hero-inner { max-width: 820px; margin: 0 auto; position: relative; z-index: 1; }
+  .hero-tag {
+    display: inline-block;
+    background: var(--mx-purple);
+    color: #d8d4ff;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(36px, 5vw, 58px);
+    line-height: 1.1;
+    color: var(--white);
+    margin-bottom: 16px;
+  }
+  .hero h1 em { font-style: italic; color: #C5BFF8; }
+  .hero-sub {
+    font-size: 18px;
+    color: #B4B2A9;
+    max-width: 560px;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+  .hero-meta {
+    display: flex; gap: 24px; flex-wrap: wrap;
+  }
+  .hero-meta span {
+    font-size: 13px; color: #888780;
+  }
+  .hero-meta strong { color: #D3D1C7; font-weight: 500; }
+
+  /* LAYOUT */
+  .wrapper { max-width: 860px; margin: 0 auto; padding: 0 32px; }
+
+  /* EXEC SUMMARY BAND */
+  .summary-band {
+    background: var(--mx-purple-light);
+    border-left: 4px solid var(--mx-purple);
+    padding: 28px 32px;
+    margin: 48px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .summary-band p {
+    font-size: 17px;
+    line-height: 1.75;
+    color: #3C3489;
+  }
+
+  /* SECTION HEADERS */
+  .section { margin: 56px 0; }
+  .section-num {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--mx-purple);
+    margin-bottom: 6px;
+  }
+  .section h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(24px, 3vw, 34px);
+    color: var(--mx-gray);
+    margin-bottom: 20px;
+    line-height: 1.2;
+  }
+  .section p {
+    font-size: 16px;
+    color: #444441;
+    margin-bottom: 16px;
+    line-height: 1.75;
+  }
+
+  /* FEATURE GRID */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .feature-card {
+    border: 1px solid var(--mx-border);
+    border-radius: 10px;
+    padding: 20px;
+    background: var(--white);
+  }
+  .feature-icon {
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  .feature-card h3 {
+    font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--mx-gray);
+  }
+  .feature-card p { font-size: 13px; color: var(--mx-gray-mid); margin: 0; line-height: 1.6; }
+
+  /* PERSONA CARDS */
+  .persona-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .persona-card {
+    border: 1px solid var(--mx-border);
+    border-radius: 12px;
+    padding: 22px;
+    background: var(--white);
+    position: relative;
+    overflow: hidden;
+  }
+  .persona-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 12px 12px 0 0;
+  }
+  .p-pm::after { background: var(--mx-purple); }
+  .p-growth::after { background: var(--mx-teal); }
+  .p-analyst::after { background: #3B6D11; }
+  .p-eng::after { background: var(--mx-orange); }
+  .p-ux::after { background: #993556; }
+  .p-exec::after { background: #185FA5; }
+  .persona-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px;
+    margin-bottom: 12px;
+  }
+  .p-pm .persona-avatar { background: var(--mx-purple-light); color: var(--mx-purple); }
+  .p-growth .persona-avatar { background: var(--mx-teal-light); color: var(--mx-teal); }
+  .p-analyst .persona-avatar { background: #EAF3DE; color: #3B6D11; }
+  .p-eng .persona-avatar { background: var(--mx-orange-light); color: var(--mx-orange); }
+  .p-ux .persona-avatar { background: #FBEAF0; color: #993556; }
+  .p-exec .persona-avatar { background: #E6F1FB; color: #185FA5; }
+  .persona-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .persona-role { font-size: 12px; color: var(--mx-gray-mid); margin-bottom: 12px; }
+  .persona-item { margin-bottom: 8px; }
+  .persona-item label { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--mx-gray-mid); }
+  .persona-item p { font-size: 13px; color: #444441; margin: 2px 0 0; line-height: 1.5; }
+
+  /* JOURNEY TABLE */
+  .journey-table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 14px; }
+  .journey-table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--mx-gray);
+    color: var(--white);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+  }
+  .journey-table th:first-child { border-radius: 8px 0 0 0; }
+  .journey-table th:last-child { border-radius: 0 8px 0 0; }
+  .journey-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--mx-border);
+    vertical-align: top;
+    color: #444441;
+    line-height: 1.55;
+  }
+  .journey-table tr:last-child td { border-bottom: none; }
+  .journey-table tr:nth-child(even) td { background: var(--mx-gray-light); }
+  .step-badge {
+    display: inline-block;
+    background: var(--mx-purple-light);
+    color: var(--mx-purple);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .pain-pill {
+    display: inline-block;
+    background: #FAECE7;
+    color: #993C1D;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-top: 4px;
+  }
+
+  /* PROBLEMS */
+  .problems-list { margin: 24px 0; }
+  .problem-item {
+    border: 1px solid var(--mx-border);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .problem-header {
+    padding: 18px 22px;
+    display: flex; align-items: flex-start; gap: 14px;
+    cursor: pointer;
+    background: var(--white);
+  }
+  .problem-rank {
+    min-width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .rank-1 { background: var(--mx-orange-light); color: var(--mx-orange); }
+  .rank-2 { background: var(--mx-orange-light); color: var(--mx-orange); }
+  .rank-3 { background: #FFF3CD; color: #856404; }
+  .rank-4 { background: var(--mx-gray-light); color: var(--mx-gray-mid); }
+  .rank-5 { background: var(--mx-gray-light); color: var(--mx-gray-mid); }
+  .problem-header h3 { font-size: 16px; font-weight: 600; color: var(--mx-gray); margin-bottom: 4px; }
+  .problem-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .tag {
+    font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px;
+  }
+  .tag-high { background: #FAECE7; color: #993C1D; }
+  .tag-med { background: #FFF3CD; color: #856404; }
+  .tag-low { background: var(--mx-gray-light); color: var(--mx-gray-mid); }
+  .problem-body {
+    padding: 0 22px 18px 68px;
+    font-size: 14px;
+    color: #444441;
+    line-height: 1.7;
+  }
+  .jtbd-block {
+    background: var(--mx-purple-light);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 14px;
+    color: #3C3489;
+    margin-bottom: 14px;
+    font-style: italic;
+    line-height: 1.6;
+  }
+  .whys { padding: 0; list-style: none; }
+  .whys li {
+    padding: 6px 0;
+    padding-left: 24px;
+    position: relative;
+    font-size: 13px;
+    color: #5F5E5A;
+    border-left: 2px solid var(--mx-border);
+    margin-left: 8px;
+    padding-left: 14px;
+  }
+  .whys li::before {
+    content: attr(data-n);
+    position: absolute;
+    left: -12px;
+    top: 6px;
+    background: var(--mx-border);
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: var(--mx-gray);
+    line-height: 20px; text-align: center;
+  }
+
+  /* PRIORITY MATRIX */
+  .priority-table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 14px; }
+  .priority-table th {
+    text-align: center; padding: 10px 12px;
+    background: var(--mx-gray-light);
+    font-size: 12px; font-weight: 600; letter-spacing: 0.3px; color: var(--mx-gray-mid);
+    border-bottom: 2px solid var(--mx-border);
+  }
+  .priority-table th:first-child { text-align: left; }
+  .priority-table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--mx-border);
+    vertical-align: middle;
+    color: #444441;
+  }
+  .priority-table td:not(:first-child) { text-align: center; }
+  .priority-table tr:last-child td { border-bottom: none; }
+  .badge-high { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background: #FAECE7; color: #993C1D; }
+  .badge-med { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background: #FFF3CD; color: #856404; }
+  .badge-low { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--mx-gray-light); color: var(--mx-gray-mid); }
+
+  /* SOLUTION CARDS */
+  .solution-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 24px 0;
+  }
+  @media (max-width: 640px) { .solution-pair { grid-template-columns: 1fr; } }
+  .sol-card {
+    border: 1.5px solid var(--mx-purple);
+    border-radius: 12px;
+    padding: 24px;
+    background: var(--white);
+  }
+  .sol-card.sol-2 { border-color: var(--mx-teal); }
+  .sol-num { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--mx-purple); margin-bottom: 8px; }
+  .sol-card.sol-2 .sol-num { color: var(--mx-teal); }
+  .sol-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 12px; color: var(--mx-gray); }
+  .sol-body p { font-size: 14px; color: #444441; margin-bottom: 10px; line-height: 1.65; }
+  .sol-tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+  .sol-tag { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; background: var(--mx-purple-light); color: #3C3489; }
+  .sol-card.sol-2 .sol-tag { background: var(--mx-teal-light); color: var(--mx-teal); }
+
+  /* ROADMAP */
+  .roadmap { margin: 24px 0; }
+  .roadmap-phase {
+    display: flex; gap: 20px; margin-bottom: 20px;
+    align-items: flex-start;
+  }
+  .phase-dot {
+    min-width: 48px; height: 48px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; flex-shrink: 0;
+    letter-spacing: 0.3px;
+  }
+  .ph-1 { background: var(--mx-purple-light); color: var(--mx-purple); }
+  .ph-2 { background: #EAF3DE; color: #3B6D11; }
+  .ph-3 { background: #E6F1FB; color: #185FA5; }
+  .phase-line { position: relative; }
+  .roadmap-phase:not(:last-child) .phase-dot::after {
+    content: '';
+    position: absolute;
+    left: 24px; top: 48px;
+    width: 1px; height: 24px;
+    background: var(--mx-border);
+  }
+  .roadmap-phase { position: relative; }
+  .phase-content h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: var(--mx-gray); }
+  .phase-content p { font-size: 14px; color: #5F5E5A; line-height: 1.6; }
+  .phase-timeband { font-size: 12px; font-weight: 600; color: var(--mx-gray-mid); margin-bottom: 6px; }
+
+  /* METRICS */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin: 24px 0;
+  }
+  .metric-card {
+    border: 1px solid var(--mx-border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    background: var(--white);
+  }
+  .metric-icon { font-size: 22px; margin-bottom: 8px; }
+  .metric-card label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--mx-gray-mid); display: block; margin-bottom: 4px; }
+  .metric-card h4 { font-size: 15px; font-weight: 600; color: var(--mx-gray); margin-bottom: 6px; }
+  .metric-card p { font-size: 13px; color: #5F5E5A; line-height: 1.5; }
+  .guardrail { border-color: #F0997B; background: #FFFAF8; }
+  .guardrail label { color: #D85A30; }
+
+  /* SUMMARY SLIDE */
+  .summary-slide {
+    background: var(--mx-gray);
+    border-radius: 16px;
+    padding: 40px;
+    color: var(--white);
+    margin: 48px 0;
+  }
+  .summary-slide h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: var(--white);
+    margin-bottom: 24px;
+    border-bottom: 1px solid #444441;
+    padding-bottom: 12px;
+  }
+  .summary-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 600px) { .summary-row { grid-template-columns: 1fr; } }
+  .summary-block h3 { font-size: 13px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--mx-purple-mid); margin-bottom: 10px; }
+  .summary-block p, .summary-block li { font-size: 14px; color: #D3D1C7; line-height: 1.65; }
+  .summary-block ul { padding-left: 18px; }
+  .summary-block li { margin-bottom: 5px; }
+
+  /* QUOTE */
+  blockquote {
+    border-left: 3px solid var(--mx-purple);
+    padding: 14px 20px;
+    margin: 24px 0;
+    background: var(--mx-purple-light);
+    border-radius: 0 8px 8px 0;
+    font-size: 15px;
+    color: #3C3489;
+    font-style: italic;
+    line-height: 1.7;
+  }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--mx-border); margin: 48px 0; }
+
+  /* FOOTER */
+  footer {
+    background: var(--mx-gray-light);
+    border-top: 1px solid var(--mx-border);
+    padding: 32px 40px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--mx-gray-mid);
+  }
+  footer strong { color: var(--mx-gray); }
+  footer a { color: var(--mx-purple); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">Product Teardown</div>
+    <h1>Mixpanel — Making<br><em>Analytics Actually Work</em></h1>
+    <p class="hero-sub">A deep-dive into user experience, retention gaps, and the two product bets that could change how 29,000+ companies find insights.</p>
+    <div class="hero-meta">
+      <span>By <strong>Rishabh R.</strong></span>
+      <span>Guided by <strong>Digvijay</strong></span>
+      <span>Certification: <strong>AI PM — AcceleratorX</strong></span>
+    </div>
+  </div>
+</div>
+
+<div class="wrapper">
+
+  <!-- EXEC SUMMARY -->
+  <div class="summary-band">
+    <p>Mixpanel is a powerful analytics platform — but power without clarity leads to churn. This teardown takes the perspective of a Mixpanel PM with one goal: <strong>improve user engagement and retention</strong> of the product itself. We map six personas, trace the full analytics workflow, identify the biggest friction points using JTBD and 5 Whys, then prioritize two high-ROI solutions: an <strong>AI Analytics Assistant</strong> and a <strong>Guided Onboarding Wizard</strong>.</p>
+  </div>
+
+  <!-- SECTION 1: PRODUCT OVERVIEW -->
+  <div class="section">
+    <div class="section-num">01 — Product Overview</div>
+    <h2>What Mixpanel Does (and Why It Matters)</h2>
+    <p>Mixpanel is an event-based product analytics platform used by over 29,000 companies. Every user action — a click, a sign-up, a purchase — is tracked as an "event." Teams then query these events to understand <em>why</em> users behave the way they do, not just what they did.</p>
+    <p>Its core promise: <strong>stop guessing, start growing.</strong></p>
+
+    <blockquote>"Product analytics is the infrastructure that makes growth measurable. It's how teams answer not just 'did we grow?' but 'why did we grow, and what should we do next?'"</blockquote>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#EEEDfd;">📊</div>
+        <h3>Funnels & Event Analytics</h3>
+        <p>Track how users move through key flows and pinpoint exactly where they drop off.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#e1f5ee;">👥</div>
+        <h3>Cohorts & Segmentation</h3>
+        <p>Group users by behaviour or properties to compare retention across segments.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#FAECE7;">🎥</div>
+        <h3>Session Replay & Heatmaps</h3>
+        <p>Watch real user sessions and visualize where they click, scroll, and rage-click.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#FFF3CD;">🧪</div>
+        <h3>Experiments & Feature Flags</h3>
+        <p>Run A/B tests and progressively roll out features tied to real metrics.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#E6F1FB;">🌳</div>
+        <h3>Metric Trees</h3>
+        <p>Build visual KPI maps from North Star down to component-level drivers.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:#EEEDfd;">🤖</div>
+        <h3>AI Insights (Spark Copilot)</h3>
+        <p>Ask questions in plain English; Mixpanel's AI surfaces anomalies and suggests analyses.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 2: PERSONAS -->
+  <div class="section">
+    <div class="section-num">02 — User Personas</div>
+    <h2>Who Actually Uses Mixpanel?</h2>
+    <p>Mixpanel serves cross-functional teams. Six distinct personas use the product with different goals, contexts, and frustrations.</p>
+
+    <div class="persona-grid">
+      <div class="persona-card p-pm">
+        <div class="persona-avatar">AY</div>
+        <h3>Ayesha</h3>
+        <div class="persona-role">Product Manager · SaaS Startup</div>
+        <div class="persona-item"><label>Goal</label><p>Improve feature engagement & hit retention targets</p></div>
+        <div class="persona-item"><label>Pain</label><p>Can't see <em>why</em> users drop off; multi-hypothesis testing is complex</p></div>
+        <div class="persona-item"><label>Core tool</label><p>Funnels, Retention, Feature Flags</p></div>
+      </div>
+      <div class="persona-card p-growth">
+        <div class="persona-avatar">RV</div>
+        <h3>Ravi</h3>
+        <div class="persona-role">Growth Marketer · E-commerce</div>
+        <div class="persona-item"><label>Goal</label><p>Tie marketing spend directly to product outcomes</p></div>
+        <div class="persona-item"><label>Pain</label><p>Web analytics data is incomplete; attribution is murky</p></div>
+        <div class="persona-item"><label>Core tool</label><p>Experiments, Cohorts, Conversion Reports</p></div>
+      </div>
+      <div class="persona-card p-analyst">
+        <div class="persona-avatar">NI</div>
+        <h3>Nina</h3>
+        <div class="persona-role">Data Analyst · Cross-team</div>
+        <div class="persona-item"><label>Goal</label><p>Empower teams with reliable, self-serve metrics</p></div>
+        <div class="persona-item"><label>Pain</label><p>Manual SQL queries are slow; "just give me the number" pressure</p></div>
+        <div class="persona-item"><label>Core tool</label><p>Dashboards, Metric Trees, Warehouse Connectors</p></div>
+      </div>
+      <div class="persona-card p-eng">
+        <div class="persona-avatar">DV</div>
+        <h3>Devon</h3>
+        <div class="persona-role">Software Engineer · Product team</div>
+        <div class="persona-item"><label>Goal</label><p>Minimal engineering overhead for tracking</p></div>
+        <div class="persona-item"><label>Pain</label><p>Messy event data; debugging tracking bugs is tedious</p></div>
+        <div class="persona-item"><label>Core tool</label><p>SDK Integration, Session Replay (for debugging)</p></div>
+      </div>
+      <div class="persona-card p-ux">
+        <div class="persona-avatar">MI</div>
+        <h3>Mia</h3>
+        <div class="persona-role">UX Designer / Researcher</div>
+        <div class="persona-item"><label>Goal</label><p>Understand the <em>why</em> behind user pain points</p></div>
+        <div class="persona-item"><label>Pain</label><p>Quantitative data alone doesn't tell the full story</p></div>
+        <div class="persona-item"><label>Core tool</label><p>Session Replay, Heatmaps</p></div>
+      </div>
+      <div class="persona-card p-exec">
+        <div class="persona-avatar">LE</div>
+        <h3>Lee</h3>
+        <div class="persona-role">Chief Product Officer · Executive</div>
+        <div class="persona-item"><label>Goal</label><p>High-level product performance visibility</p></div>
+        <div class="persona-item"><label>Pain</label><p>Overloaded with data; needs summaries not raw charts</p></div>
+        <div class="persona-item"><label>Core tool</label><p>North Star Dashboards, MI Reports</p></div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 3: USER JOURNEY -->
+  <div class="section">
+    <div class="section-num">03 — User Journey</div>
+    <h2>Finding & Fixing a Funnel Drop-off</h2>
+    <p>The most common Mixpanel use case: a PM notices a conversion problem, investigates, and iterates. Here's the full journey — and where it breaks down.</p>
+
+    <table class="journey-table">
+      <thead>
+        <tr>
+          <th style="width:28%">Stage</th>
+          <th style="width:30%">What the user does</th>
+          <th style="width:42%">Pain points</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="step-badge">1 · Log in</span><br>Opens Mixpanel dashboard</td>
+          <td>Checks recent metrics for anomalies</td>
+          <td><span class="pain-pill">Overwhelm</span> Too many charts; orientation takes time</td>
+        </tr>
+        <tr>
+          <td><span class="step-badge">2 · Funnel analysis</span><br>Identifies a dip</td>
+          <td>Opens the funnel report to find where users drop off</td>
+          <td><span class="pain-pill">Data delay</span> Recent events may not appear yet; dirty data hides real signal</td>
+        </tr>
+        <tr>
+          <td><span class="step-badge">3 · Segmenting</span><br>Narrows the problem</td>
+          <td>Filters by country, device, cohort to isolate the issue</td>
+          <td><span class="pain-pill">Choice overload</span> Too many filter options; hard to know where to start</td>
+        </tr>
+        <tr>
+          <td><span class="step-badge">4 · Session replay</span><br>Watches real users</td>
+          <td>Clicks "Watch Replay" to see what a dropped-off user actually did</td>
+          <td><span class="pain-pill">Manual triage</span> Hard to find a representative session; watching is slow</td>
+        </tr>
+        <tr>
+          <td><span class="step-badge">5 · Brainstorm fix</span><br>Team collaboration</td>
+          <td>Shares findings on Slack; proposes a UI change</td>
+          <td><span class="pain-pill">No in-app collab</span> Mixpanel has no commenting or assignment features</td>
+        </tr>
+        <tr>
+          <td><span class="step-badge">6 · Experiment</span><br>Launches A/B test</td>
+          <td>Creates a feature flag or A/B test for the proposed fix</td>
+          <td><span class="pain-pill">Fragmentation</span> May need an external tool; no built-in visual editor</td>
+        </tr>
+        <tr>
+          <td><span class="step-badge">7 · Measure</span><br>Evaluates results</td>
+          <td>Monitors if the drop-off improves post-launch</td>
+          <td><span class="pain-pill">Signal noise</span> Changes can be subtle; statistical significance is hard to judge</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 4: PROBLEMS -->
+  <div class="section">
+    <div class="section-num">04 — Problems Identified</div>
+    <h2>Root Causes via JTBD & 5 Whys</h2>
+    <p>We translate user pain into concrete problems, framing each with Jobs-To-Be-Done and diagnosing the root cause using 5 Whys.</p>
+
+    <div class="problems-list">
+
+      <div class="problem-item">
+        <div class="problem-header">
+          <div class="problem-rank rank-1">1</div>
+          <div>
+            <h3>Steep onboarding & instrumentation</h3>
+            <div class="problem-meta">
+              <span class="tag tag-high">Severity: High</span>
+              <span class="tag tag-high">Frequency: High</span>
+              <span class="tag tag-high">Business Impact: High</span>
+            </div>
+          </div>
+        </div>
+        <div class="problem-body">
+          <div class="jtbd-block">When a new team adopts Mixpanel, they want to start capturing meaningful events so they can quickly see user metrics — but they often get stuck figuring out how to define and instrument those events.</div>
+          <ol class="whys">
+            <li data-n="1">Mixpanel requires a well-defined tracking plan and some SDK coding knowledge to get started.</li>
+            <li data-n="2">New users aren't sure which events matter most, or how to sync front-end actions with Mixpanel events.</li>
+            <li data-n="3">Docs exist but users face too many options (autocapture vs manual) and technical debt slows implementation.</li>
+            <li data-n="4">There's no interactive wizard for mapping product features to events.</li>
+            <li data-n="5">Analytics tools historically prioritised developer flexibility over guided setup.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="problem-item">
+        <div class="problem-header">
+          <div class="problem-rank rank-2">2</div>
+          <div>
+            <h3>Slow insight discovery (too much manual querying)</h3>
+            <div class="problem-meta">
+              <span class="tag tag-high">Severity: High</span>
+              <span class="tag tag-high">Frequency: High</span>
+              <span class="tag tag-high">Business Impact: High</span>
+            </div>
+          </div>
+        </div>
+        <div class="problem-body">
+          <div class="jtbd-block">When a PM wants to know why a metric changed, they want to drill down and get answers fast — but queries and analyses are manual and time-consuming.</div>
+          <ol class="whys">
+            <li data-n="1">Users must build reports (funnels, breakdowns) manually with no starting point.</li>
+            <li data-n="2">Mixpanel had limited automated insight until recently (Spark Copilot is new).</li>
+            <li data-n="3">Algorithmic insight recommendations need high-quality data and well-tuned heuristics.</li>
+            <li data-n="4">Full analysis automation is technically complex; Mixpanel is actively adding AI features.</li>
+            <li data-n="5">Segmentation cross-metrics analysis remains largely manual even today.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="problem-item">
+        <div class="problem-header">
+          <div class="problem-rank rank-3">3</div>
+          <div>
+            <h3>Complex UI for non-technical users</h3>
+            <div class="problem-meta">
+              <span class="tag tag-med">Severity: Medium</span>
+              <span class="tag tag-high">Frequency: High</span>
+              <span class="tag tag-med">Business Impact: Medium</span>
+            </div>
+          </div>
+        </div>
+        <div class="problem-body">
+          <div class="jtbd-block">When a marketing manager opens Mixpanel, they want to find key metrics easily — but the number of reports, filters, and options overwhelms them before they get value.</div>
+          <ol class="whys">
+            <li data-n="1">Mixpanel exposes many report types (funnels, cohorts, flows, etc.) designed for power users.</li>
+            <li data-n="2">Feature velocity outpaces simplification — the product keeps adding, rarely removing.</li>
+            <li data-n="3">Self-serve analytics assumes a baseline data literacy that casual users don't have.</li>
+            <li data-n="4">Non-technical users click away before finding value, increasing early churn.</li>
+            <li data-n="5">Few analytics tools offer pre-built templates or guided task walkthroughs.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="problem-item">
+        <div class="problem-header">
+          <div class="problem-rank rank-4">4</div>
+          <div>
+            <h3>Collaboration & sharing gaps</h3>
+            <div class="problem-meta">
+              <span class="tag tag-med">Severity: Medium</span>
+              <span class="tag tag-med">Frequency: Medium</span>
+              <span class="tag tag-med">Business Impact: Medium</span>
+            </div>
+          </div>
+        </div>
+        <div class="problem-body">
+          <div class="jtbd-block">When teams work on insights together, they want to share findings seamlessly — but Mixpanel is siloed and doesn't integrate deeply into dev or communication workflows.</div>
+          <ol class="whys">
+            <li data-n="1">Mixpanel has limited in-app collaboration (no comments, no assignment).</li>
+            <li data-n="2">Analytics tools are slower to adopt social features than tools like Figma.</li>
+            <li data-n="3">The product focuses on metrics, not team workflows.</li>
+            <li data-n="4">Slack alerts exist but there's no deep bidirectional integration.</li>
+            <li data-n="5">Teams end up emailing screenshots, delaying action.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="problem-item">
+        <div class="problem-header">
+          <div class="problem-rank rank-5">5</div>
+          <div>
+            <h3>Unpredictable pricing at scale</h3>
+            <div class="problem-meta">
+              <span class="tag tag-med">Severity: Medium</span>
+              <span class="tag tag-med">Frequency: Medium</span>
+              <span class="tag tag-low">Business Impact: Low/Med</span>
+            </div>
+          </div>
+        </div>
+        <div class="problem-body">
+          <div class="jtbd-block">When a growing startup hits a traffic spike, they want to scale analytics affordably — but Mixpanel's event-volume pricing can cause surprise bills.</div>
+          <ol class="whys">
+            <li data-n="1">Pricing is tiered by event count; a viral campaign can instantly exceed the free tier.</li>
+            <li data-n="2">Users don't monitor event volume closely day-to-day.</li>
+            <li data-n="3">Mixpanel doesn't proactively alert customers as they approach limits.</li>
+            <li data-n="4">Billing transparency is treated as an afterthought vs a core feature.</li>
+            <li data-n="5">Projects can get cut off without warning, damaging trust.</li>
+          </ol>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 5: PRIORITIZATION -->
+  <div class="section">
+    <div class="section-num">05 — Prioritisation</div>
+    <h2>Impact vs Effort Matrix</h2>
+    <p>We scored all proposed solutions on two axes: potential impact on user engagement/retention, and implementation effort. The top two clear winners were selected for the implementation plan.</p>
+
+    <table class="priority-table">
+      <thead>
+        <tr>
+          <th>Solution</th>
+          <th>Impact</th>
+          <th>Effort</th>
+          <th>Priority</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background:#FFFAF8;">
+          <td><strong>🤖 AI Analytics Assistant</strong> — conversational copilot to answer "why did X drop?"</td>
+          <td><span class="badge-high">High</span></td>
+          <td><span class="badge-high">High</span></td>
+          <td><span class="badge-high">★ Top Pick</span></td>
+        </tr>
+        <tr style="background:#FFFAF8;">
+          <td><strong>🧙 Guided Onboarding Wizard</strong> — step-by-step setup with templated events</td>
+          <td><span class="badge-high">High</span></td>
+          <td><span class="badge-med">Medium</span></td>
+          <td><span class="badge-high">★ Top Pick</span></td>
+        </tr>
+        <tr>
+          <td><strong>📋 Dashboard Templates</strong> — pre-built reports for common verticals</td>
+          <td><span class="badge-med">Medium</span></td>
+          <td><span class="badge-med">Medium</span></td>
+          <td><span class="badge-med">Plan next</span></td>
+        </tr>
+        <tr>
+          <td><strong>🔔 Insight Notifications</strong> — anomaly detection alerts for key metrics</td>
+          <td><span class="badge-med">Medium</span></td>
+          <td><span class="badge-med">Medium</span></td>
+          <td><span class="badge-med">Plan next</span></td>
+        </tr>
+        <tr>
+          <td><strong>💬 Usage Alerts Dashboard</strong> — notify users as event limits approach</td>
+          <td><span class="badge-med">Medium</span></td>
+          <td><span class="badge-low">Low</span></td>
+          <td><span class="badge-med">Quick win</span></td>
+        </tr>
+        <tr>
+          <td><strong>👥 In-App Commenting</strong> — comment on dashboards, tag teammates</td>
+          <td><span class="badge-med">Medium</span></td>
+          <td><span class="badge-high">High</span></td>
+          <td><span class="badge-low">Deprioritise</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 6: TOP SOLUTIONS -->
+  <div class="section">
+    <div class="section-num">06 — Top Solutions</div>
+    <h2>The Two Bets Worth Making</h2>
+    <p>Both solutions directly address our highest-priority problems. Together they serve new users (onboarding) and power users (AI speed).</p>
+
+    <div class="solution-pair">
+      <div class="sol-card sol-1">
+        <div class="sol-num">Solution 1</div>
+        <h3>AI Analytics Assistant</h3>
+        <div class="sol-body">
+          <p>A conversational copilot that answers plain-English questions like <em>"Why did onboarding conversion drop last week?"</em> using live Mixpanel data.</p>
+          <p>Builds on Mixpanel's existing Spark Copilot feature. Users get suggested reports, anomaly explanations, and next-step recommendations — without writing a single query.</p>
+          <p><strong>Key constraint:</strong> Data privacy guardrails needed; only anonymised/meta data fed to the LLM. Fallback to raw query builder if assistant fails.</p>
+        </div>
+        <div class="sol-tag-row">
+          <span class="sol-tag">NLP / LLM</span>
+          <span class="sol-tag">Chat UI</span>
+          <span class="sol-tag">Anomaly detection</span>
+          <span class="sol-tag">6–9 months</span>
+        </div>
+      </div>
+      <div class="sol-card sol-2">
+        <div class="sol-num">Solution 2</div>
+        <h3>Guided Onboarding Wizard</h3>
+        <div class="sol-body">
+          <p>An in-app "Get Started" checklist that walks new accounts through three steps: define key events (with real examples), install SDK and verify a test event, then view their first funnel.</p>
+          <p>Includes tooltips, sample data, and vertical-specific templates (e.g. SaaS, e-commerce). The goal: cut <strong>time-to-first-insight</strong> dramatically.</p>
+          <p><strong>Key constraint:</strong> Tracking plan must stay generic enough for diverse app types. Consider gating core features until setup is complete.</p>
+        </div>
+        <div class="sol-tag-row">
+          <span class="sol-tag">React/JS</span>
+          <span class="sol-tag">Checklist UI</span>
+          <span class="sol-tag">Templates</span>
+          <span class="sol-tag">3–6 months</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 7: ROADMAP -->
+  <div class="section">
+    <div class="section-num">07 — Implementation Plan</div>
+    <h2>9-Month Rollout</h2>
+    <p>Phased delivery with MVPs to validate early before full investment.</p>
+
+    <div class="roadmap">
+      <div class="roadmap-phase">
+        <div class="phase-dot ph-1">Q1</div>
+        <div class="phase-content">
+          <div class="phase-timeband">Months 1–3</div>
+          <h4>Wireframe & Foundation</h4>
+          <p>Design onboarding wizard flows; build basic frontend checklist. For the AI assistant, collect example queries from power users, partner with LLM provider, and build backend pipeline to feed Mixpanel data snippets (e.g. last week's retention curve) to the model.</p>
+        </div>
+      </div>
+      <div class="roadmap-phase">
+        <div class="phase-dot ph-2">Q2</div>
+        <div class="phase-content">
+          <div class="phase-timeband">Months 4–6</div>
+          <h4>Launch Onboarding MVP & AI Prototype</h4>
+          <p>Release onboarding wizard to all new accounts. Track "time to first chart" and completion rates. Launch AI assistant frontend prototype internally; begin backend integration and testing with a limited query set.</p>
+        </div>
+      </div>
+      <div class="roadmap-phase">
+        <div class="phase-dot ph-3">Q3</div>
+        <div class="phase-content">
+          <div class="phase-timeband">Months 7–9</div>
+          <h4>AI Beta & Vertical Templates</h4>
+          <p>Fine-tune AI assistant on Mixpanel-specific terminology and user queries. Open beta to invited power users. Gather NPS and watch for hallucination patterns. Expand onboarding with e-commerce and mobile app templates. Run A/B test comparing AI cohort vs control group on insight-related support tickets.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 8: METRICS -->
+  <div class="section">
+    <div class="section-num">08 — Success Metrics</div>
+    <h2>How We'll Know It's Working</h2>
+    <p>All metrics tracked using Mixpanel itself — we instrument every new feature the same way we'd instrument a client's product.</p>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-icon">⭐</div>
+        <label>North Star</label>
+        <h4>Weekly Active Accounts (WAA)</h4>
+        <p>Target: +10% in six months. Reflects genuine engagement with core analytics.</p>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">👀</div>
+        <label>Awareness</label>
+        <h4>Feature Discovery Rate</h4>
+        <p>% of new signups who open the wizard or click on the AI assistant within first session.</p>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">📈</div>
+        <label>Adoption</label>
+        <h4>Feature Usage Rate</h4>
+        <p>Target: 30% of new accounts complete onboarding; 25% of analysts use AI assistant weekly.</p>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">💰</div>
+        <label>Business</label>
+        <h4>Free-to-Paid Conversion</h4>
+        <p>Tracks whether faster "time to first insight" converts free accounts to paid plans.</p>
+      </div>
+      <div class="metric-card guardrail">
+        <div class="metric-icon">🛡️</div>
+        <label>Guardrail</label>
+        <h4>Query Latency</h4>
+        <p>Must not spike after adding AI layer. Monitor P95 response times weekly.</p>
+      </div>
+      <div class="metric-card guardrail">
+        <div class="metric-icon">🛡️</div>
+        <label>Guardrail</label>
+        <h4>Support Ticket Volume</h4>
+        <p>Should go down, not up. A rise signals the wizard or assistant is confusing users.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SUMMARY SLIDE -->
+  <div class="summary-slide">
+    <h2>One-Slide Summary</h2>
+    <div class="summary-row">
+      <div class="summary-block">
+        <h3>Context</h3>
+        <p>Mixpanel is an event-based analytics platform for product teams (29,000+ companies). Our goal: increase product-side engagement & retention by reducing friction in the analytics workflow.</p>
+      </div>
+      <div class="summary-block">
+        <h3>Users</h3>
+        <p>PMs, growth marketers, data analysts, engineers, UX designers, and executives — all using funnels, retention, experiments, and session replays to answer "why."</p>
+      </div>
+      <div class="summary-block">
+        <h3>Problems (top 2)</h3>
+        <ul>
+          <li>New users stall on tracking setup — steep onboarding drives early churn</li>
+          <li>Analysts spend too long querying — slow insight discovery kills decision velocity</li>
+        </ul>
+      </div>
+      <div class="summary-block">
+        <h3>Solutions & Metrics</h3>
+        <ul>
+          <li>🤖 AI Analytics Assistant — answer "why?" in plain English</li>
+          <li>🧙 Guided Onboarding Wizard — slash time-to-first-insight</li>
+          <li>Success: +10% WAA, 30% onboarding completion, no latency spike</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrapper -->
+
+<footer>
+  <p>Case study by <strong>Rishabh R.</strong> &nbsp;·&nbsp; <a href="mailto:rishabhukrishabh@gmail.com">rishabhukrishabh@gmail.com</a> &nbsp;·&nbsp; <a href="https://linkedin.com/in/rishabh-rishabhh">LinkedIn</a> &nbsp;·&nbsp; <a href="https://rishabhrishabhh.github.io/rishabh-portfolio/">Portfolio</a></p>
+  <p style="margin-top: 6px; color: #B4B2A9;">Guided by Digvijay &nbsp;·&nbsp; AI PM Certification — AcceleratorX</p>
+</footer>
+
+</body>
+</html>
